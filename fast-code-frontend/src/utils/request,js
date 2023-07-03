@@ -1,0 +1,49 @@
+import axios from "axios"
+// import {getAccessToken, removeAccessToken} from "./cookies"
+import {StatusCodes} from 'http-status-codes'
+import router from '@/router';
+
+
+const HEADER_ACCEPT = 'application/json'
+const HEADER_CONTENT_TYPE = 'application/json'
+const WITH_CREDENTIALS = false
+const REQUEST_HEADER = {
+    Accept: HEADER_ACCEPT,
+    'Content-Type': HEADER_CONTENT_TYPE
+}
+const service = axios.create({baseURL: 'https://localhost:7090/api', withCredentials: WITH_CREDENTIALS, headers: REQUEST_HEADER})
+
+
+// Tiền xử lý request thêm token
+service.interceptors.request.use((config) => { // const token = getAccessToken()
+    if (token) {
+        config.headers['authorization'] = 'Bearer ' + token
+    } else {
+        config.headers['authorization'] = 'Bearer abcdefghjkl'
+
+    }
+    return config
+}, (error) => {
+    return Promise.reject(error)
+})
+// Xử lý response trả về
+service.interceptors.response.use((response) => {
+    console.log(response)
+    response.isSuccess = true
+    return response
+}, (error) => {
+    if (error.response.status == StatusCodes.UNAUTHORIZED) { // removeAccessToken()
+        router.push({name: 'login'})
+    }
+    if (error.response.status === StatusCodes.FORBIDDEN) {
+        router.push({
+            name: 'Error',
+            params: {
+                pathMatch: 403
+            }
+        })
+    }
+    error.response.isSuccess = false
+    return error.response
+})
+export default service
